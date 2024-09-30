@@ -51,10 +51,8 @@ isRightTriangle
 кругу элементу. Вернуть True или False.
 --}
 hasEqualNext :: Eq a => [a] -> Bool
-hasEqualNext xs = any equalPair pairs
+hasEqualNext xs = any equalPair (zip xs (tail xs)) || (not (null xs) && head xs == last xs)
   where
-    pairs = zip xs (tail (cycle xs))
-    
     equalPair (a, b) = a == b
 {--
 44. Дан список целых чисел из n элементов и целое число k.
