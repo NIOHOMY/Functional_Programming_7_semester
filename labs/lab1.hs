@@ -51,7 +51,7 @@ isRightTriangle
 кругу элементу. Вернуть True или False.
 --}
 hasEqualNext :: Eq a => [a] -> Bool
-hasEqualNext xs = any equalPair (zip xs (tail xs)) || (not (null xs) && head xs == last xs)
+hasEqualNext xs = (any equalPair . zip xs . tail) xs || (not (null xs) && head xs == last xs)
   where
     equalPair (a, b) = a == b
 {--
@@ -69,7 +69,7 @@ isPowerOfK x k
       | otherwise = checkPower (n `div` k) && n `mod` k == 0
 
 countPowersOfK :: [Int] -> Int -> Int
-countPowersOfK xs k = length $ filter (`isPowerOfK` k) xs
+countPowersOfK xs k = length . filter (`isPowerOfK` k) $ xs
 {--
 61. Даны натуральные числа a и b. Определите все
 возможные последовательности из a нулей и b единиц, в
