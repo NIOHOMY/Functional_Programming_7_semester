@@ -145,3 +145,82 @@ someFun ops f x = map (\op -> op (map f x)) ops
 combineFunctions funcs = foldr (\f acc -> \x -> acc (f x)) id funcs
 applyToList f xs = map f xs
 -- applyToList ( combineFunctions [(+1), (^2)] ) [1..10]
+
+-- (. (. sum)) потыкать дома
+
+-- foldr (-) 0 [1..10] -- -5
+-- foldl (-) 0 [1..10] -- -55
+
+-- foldl f 0 [1,2,3] = f 0 1 --нач арг след -> f (f (f 0 1) 2) 3
+-- ((0+1)+2)+3
+
+-- foldr f 0 [1,2,3] = f 1 (f 2 (f 3 0))
+-- 1-(2-(3-0))
+
+
+myFoldL :: (b -> a ->b) ->b -> [a] -> b
+myFoldL f k [x] = f k x
+myFoldL f k (x:xs) = myFoldL f (f k x) xs
+
+
+myFoldR :: (a -> b ->b) ->b -> [a] -> b
+myFoldR f k [x] = f x k
+myFoldR f k (x:xs) = myFoldR f (f x k) xs
+
+-- myFoldR f k (x:xs) = f x (myFoldR f k xs)
+
+-- scanl (-) 0 [1..10] -- конечное значение справа
+-- scanr (-) 0 [1..10] -- конечное значение слева
+
+data MyBool = MyFalse | MyTrue
+  deriving Show
+
+myAnd :: MyBool -> MyBool -> MyBool
+myAnd MyTrue MyTrue = MyTrue
+myAnd _ _ = MyFalse
+
+myOr :: MyBool -> MyBool -> MyBool
+myOr MyFalse MyFalse = MyFalse
+myOr _ _ = MyTrue
+
+myFoldBool :: (MyBool -> MyBool -> MyBool) -> MyBool -> [MyBool] -> MyBool
+myFoldBool f k [x] = f x k
+myFoldBool f k (x:xs) = myFoldBool f (f x k) xs
+
+data Point = Point Integer Integer
+  deriving Show
+
+distance :: Point -> Point -> Double
+distance (Point x1 y1) (Point x2 y2) = sqrt . fromIntegral $ ( (x2 - x1) ^ 2 + (y2 - y1) ^ 2 )
+
+
+data EqRoots = TwoRoots Double Double | OneRoot Double | NoRoots
+  deriving Show
+
+  -- 2 4 1 -- 4 4 1
+findRoots :: Double -> Double -> Double -> EqRoots
+findRoots a b c 
+  | d > 0 = TwoRoots (((-b) + sqrt d)/(2*a)) (((-b) - sqrt d)/(2*a))
+  | d == 0 = OneRoot (((-b) + sqrt d)/(2*a))
+  | otherwise = NoRoots
+  where d = b ^ 2 - 4*a*c
+
+data Geometry = Circle Point Double 
+  | Triangle Point Point Point
+  | Rectangle Point Double Double
+  deriving Show
+
+-- ДЗ написать вычисление P и S, жописать метки как у Person
+
+-- Документация
+
+type Age = Integer
+type Height = Double
+type Weight = Double
+
+data Person = Person {age :: Age, 
+  height :: Height, 
+  weight :: Weight}
+  deriving Show
+
+person1 = Person {age = 7, height = 10, weight = 7}
