@@ -142,27 +142,30 @@ eval (Multiply a b) = (*) <$> eval a <*> eval b
 eval (Divide a b) = do
     divisor <- eval b
     if divisor == 0
-        then Left "Ошибка: деление на ноль"
+        then Left "Error: division by zero"
         else (/) <$> eval a <*> pure divisor
 eval (Power a b) = do
     base <- eval a
     exp' <- eval b
     if exp' < 0 || exp' /= fromInteger (round exp') 
-        then Left "Ошибка: степень должна быть целым положительным числом"
+        then Left "Error: power must be a positive integer"
         else Right (base ** exp')
 eval (Sin a) = sin <$> eval a
 eval (Cos a) = cos <$> eval a
 
 calculate :: String -> Either String Double
 calculate str = case parseExpr (removeSpaces str) of
-    Left err -> Left ("Ошибка парсинга: " ++ show err)
+    Left err -> Left ("Error: " ++ show err)
     Right expr -> eval expr
 
 
 {-- пример
-ghci> calculate "(1+4)*2 + 3/2 + (sin(3.14))"
 Right 11.501592652916488
-ghci> calculate "1+4*2 + 3/2 + (sin(3.14))"  
 Right 10.501592652916488
+Left "Error: division by zero"
+
+calculate "(1+4)*2 + 3/2 + (sin(3.14))"
+calculate "1+4*2 + 3/2 + (sin(3.14))"  
+calculate "(1+4)*2 + 3/0 + (sin(3.14))"       
 
 --}
