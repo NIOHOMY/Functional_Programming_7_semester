@@ -2,6 +2,9 @@ import Text.Parsec
 import Text.Parsec.String (Parser)
 import Control.Applicative (liftA2)
 import Text.Parsec.Expr (buildExpressionParser, Operator(..))
+import Text.Parsec.Language (emptyDef)
+import qualified Text.Parsec.Token as Token
+import Control.Monad (liftM)
 
 -- 17 : 1, 2, 14
 
@@ -75,7 +78,6 @@ sumLeaves tree
 содержит некорректное выражение).
 --}
 
-
 data Expr
     = Number Double        -- Число
     | Add Expr Expr        -- Сложение
@@ -83,31 +85,54 @@ data Expr
     | Multiply Expr Expr   -- Умножение
     | Divide Expr Expr     -- Деление
     | Power Expr Expr      -- Возведение в степень
+    | Sin Expr             -- Синус
+    | Cos Expr             -- Косинус
     deriving Show
 
--- числа
 parseNumber :: Parser Expr
 parseNumber = do
     n <- many1 (digit <|> char '.')
     return . Number $ read n
 
---  умножения и деления приор выше
+parseSin :: Parser Expr
+parseSin = do
+    _ <- string "sin"
+    _ <- char '('
+    e <- parseAddSub
+    _ <- char ')'
+    return $ Sin e
+
+parseCos :: Parser Expr
+parseCos = do
+    _ <- string "cos"
+    _ <- char '('
+    e <- parseAddSub
+    _ <- char ')'
+    return $ Cos e
+
+-- с более высоким приоритетом относительно + -
 parseMulDiv :: Parser Expr
 parseMulDiv = parsePower `chainl1` (try (char '*' *> pure Multiply) <|> try (char '/' *> pure Divide))
 
 parseAddSub :: Parser Expr
 parseAddSub = parseMulDiv `chainl1` (try (char '+' *> pure Add) <|> try (char '-' *> pure Subtract))
 
--- приор выше чем умножение и деление
+-- приоритет выше чем * /
 parsePower :: Parser Expr
 parsePower = parseFactor `chainl1` (try (char '^' *> pure Power))
 
 parseFactor :: Parser Expr
-parseFactor = try parseNumber <|> (char '(' *> parseAddSub <* char ')')
+parseFactor = try parseSin
+          <|> try parseCos
+          <|> try parseNumber
+          <|> (char '(' *> parseAddSub <* char ')')
 
 
 parseExpr :: String -> Either ParseError Expr
 parseExpr = parse (spaces *> parseAddSub <* spaces) ""
+
+removeSpaces :: String -> String
+removeSpaces = filter (/= ' ')
 
 eval :: Expr -> Either String Double
 eval (Number n) = Right n
@@ -122,12 +147,22 @@ eval (Divide a b) = do
 eval (Power a b) = do
     base <- eval a
     exp' <- eval b
-    if exp' < 0 || exp' /= fromInteger (round exp')
+    if exp' < 0 || exp' /= fromInteger (round exp') 
         then Left "Ошибка: степень должна быть целым положительным числом"
         else Right (base ** exp')
-
+eval (Sin a) = sin <$> eval a
+eval (Cos a) = cos <$> eval a
 
 calculate :: String -> Either String Double
-calculate str = case parseExpr str of
+calculate str = case parseExpr (removeSpaces str) of
     Left err -> Left ("Ошибка парсинга: " ++ show err)
     Right expr -> eval expr
+
+
+{-- пример
+ghci> calculate "(1+4)*2 + 3/2 + (sin(3.14))"
+Right 11.501592652916488
+ghci> calculate "1+4*2 + 3/2 + (sin(3.14))"  
+Right 10.501592652916488
+
+--}
